@@ -1,4 +1,4 @@
--- Developed by rtk0c and liolok
+-- Developed by rtk0c and forked by liolok
 -- https://github.com/liolok/DST-KeyBind-UI
 -- https://github.com/rtk0c/dont-starve-mods/tree/master/KeybindMagic
 --
@@ -16,23 +16,34 @@ local G = GLOBAL
 local S = G.STRINGS.UI.CONTROLSSCREEN
 
 local Widget = require('widgets/widget')
-local Text = require('widgets/text')
 local Image = require('widgets/image')
 local ImageButton = require('widgets/imagebutton')
-local PopupDialog = require('screens/redux/popupdialog')
+local Text = require('widgets/text')
 local OptionsScreen = require('screens/redux/optionsscreen')
+local PopupDialogScreen = require('screens/redux/popupdialog')
 local TEMPLATES = require('widgets/redux/templates')
 
-local function Raw(key) return G.rawget(G, key) end -- get keycode number from "KEY_*", or nil
-local function Localize(k) return Raw(k) and S.INPUTS[1][Raw(k)] or S.INPUTS[9][2] end -- key name or "- No Bind -"
-Key = { Raw = Raw } -- export to use in modmain and define Bind()
+local KEYS = modinfo.keys or {}
 
-local valid = {} -- keycode number to "KEY_*" reverse lookup table
-for _, v in ipairs(modinfo.keys) do
-  local key = v.data
-  if type(key) == 'string' and key:find('^KEY_') and Raw(key) then valid[Raw(key)] = key end
+-- "KEY_*" to code number or nil
+local function Raw(key) return G.rawget(G, key) end
+
+-- code number to "KEY_*"
+local valid = {}
+for _, option in ipairs(KEYS) do
+  local key = option.data
+  local num = Raw(key)
+  if num then valid[num] = key end
 end
 
+-- name or "- No Bind -"
+local function Localize(key)
+  local num = Raw(key)
+  return num and S.INPUTS[1][num] or S.INPUTS[9][2]
+end
+
+--------------------------------------------------------------------------------
+-- Button widget that pops up a dialog screen to bind key
 -- Adapted from screens/redux/optionsscreen.lua: BuildControlGroup()
 local BindButton = Class(Widget, function(self, param)
   Widget._ctor(self, modname .. ':KeyBindButton')
@@ -75,22 +86,95 @@ function BindButton:Bind(key)
 end
 
 function BindButton:PopupKeyBindDialog()
-  local body_text = S.CONTROL_SELECT .. '\n\n' .. string.format(S.DEFAULT_CONTROL_TEXT, Localize(self.default))
+  local text = S.CONTROL_SELECT .. '\n\n' .. string.format(S.DEFAULT_CONTROL_TEXT, Localize(self.default))
   local buttons = { { text = S.CANCEL, cb = function() TheFrontEnd:PopScreen() end } }
-  local dialog = PopupDialog(self.title, body_text, buttons)
+  local dialog = PopupDialogScreen(self.title, text, buttons)
 
   dialog.OnRawKey = function(_, keycode, down)
-    if down or not valid[keycode] then return end -- wait for releasing valid key
-    self:Bind(valid[keycode])
+    if down then return end -- wait for releasing
+    local key = valid[keycode]
+    if not key then return end -- validate code number
+    self:Bind(key)
     TheFrontEnd:PopScreen()
     TheFrontEnd:GetSound():PlaySound('dontstarve/HUD/click_move')
+    return true
   end
 
   TheFrontEnd:PushScreen(dialog)
 end
+
+--------------------------------------------------------------------------------
+-- ModConfigurationScreen Injection
+-- Replace StandardSpinner with BindButton like the one in OptionsScreen
+
+AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
+  if self.modname ~= modname then return end -- avoid messing up other mods
+  local bind_button = 'keybind_button@' .. modname -- avoid being messed up by other mods
+
+  for _, widget in ipairs(self.options_scroll_list:GetListWidgets()) do
+    local spinner = widget.opt.spinner
+    local button = BindButton({
+      width = 225, -- spinner_width
+      height = 40, -- item_height
+      text_size = 25, -- same as StandardSpinner's default
+      text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
+      offset = 0, -- put unbinding_btn closer
+      OnBind = function(key)
+        self.options[widget.real_index].value = key
+        widget.opt.data.selected_value = key
+        if key ~= widget.opt.data.initial_value then self:MakeDirty() end
+      end,
+    })
+    button:SetPosition(spinner:GetPosition()) -- take original spinner's place
+
+    widget.opt[bind_button] = widget.opt:AddChild(button)
+    widget.opt.focus_forward = function() return button.shown and button or spinner end
+  end
+
+  local OldApplyDataToWidget = self.options_scroll_list.update_fn
+  self.options_scroll_list.update_fn = function(context, widget, data, ...)
+    OldApplyDataToWidget(context, widget, data, ...)
+    local button = widget.opt[bind_button]
+    button:Hide()
+    if not data or data.is_header then return end
+
+    for _, config in ipairs(modinfo.configuration_options) do
+      if config.name == data.option.name then
+        if config.options ~= KEYS then return end
+
+        widget.opt.spinner:Hide()
+        button.title = config.label
+        button.default = config.default
+        button.initial = data.initial_value
+        button:Bind(data.selected_value)
+        button:Show()
+
+        return
+      end
+    end
+  end
+
+  self.options_scroll_list:RefreshView()
+end)
+
 --------------------------------------------------------------------------------
 -- OptionsScreen Injection
-local _key = {} -- to save changes
+
+local _key = {} -- to track bindings outside ModConfigurationScreen
+
+-- Initialize bindings
+AddClassPostConstruct('screens/redux/multiplayermainscreen', function()
+  if type(KeyBind) ~= 'function' then return end
+  for _, config in ipairs(modinfo.configuration_options) do
+    if config.options == KEYS then
+      local name = config.name
+      local key = GetModConfigData(name)
+      _key[name] = key
+      KeyBind(name, Raw(key))
+    end
+  end
+end)
+
 -- Adapted from screens/redux/optionsscreen.lua: _BuildControls()
 local BindEntry = Class(Widget, function(self, parent, conf)
   Widget._ctor(self, modname .. ':KeyBindEntry')
@@ -151,78 +235,26 @@ local Header = Class(Widget, function(self, title)
   self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 end)
 
+-- Add mod name header and keybind entries to the list in "Options > Controls"
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
+  if type(KeyBind) ~= 'function' then return end
   -- rtk0c: Reusing the same list is fine, per the current logic in ScrollableList:SetList();
   -- Don't call ScrollableList:AddItem() one by one to avoid wasting time recalcuating the list size.
-  local clist = self.kb_controllist
-  table.insert(clist.items, clist:AddChild(Header(modinfo.name)))
+  local cl = self.kb_controllist
+  table.insert(cl.items, cl:AddChild(Header(modinfo.name)))
   for _, config in ipairs(modinfo.configuration_options) do
-    if config.options == modinfo.keys then
-      _key[config.name] = GetModConfigData(config.name)
-      table.insert(clist.items, clist:AddChild(BindEntry(self, config)))
-    end
+    if _key[config.name] then table.insert(cl.items, cl:AddChild(BindEntry(self, config))) end
   end
-  clist:SetList(clist.items, true)
+  cl:SetList(cl.items, true)
 end)
 
+-- Sync bindings to mod config when saving in OptionsScreen
 local OldOptionsScreenSave = OptionsScreen.Save
 function OptionsScreen:Save(...)
   for config_name, key in pairs(_key) do
-    Key.Bind(config_name, Raw(key)) -- let mod change binding
+    KeyBind(config_name, Raw(key)) -- let mod change binding
     G.KnownModIndex:SetConfigurationOption(modname, config_name, key)
   end
   G.KnownModIndex:SaveHostConfiguration(modname) -- save to disk
   return OldOptionsScreenSave(self, ...)
 end
---------------------------------------------------------------------------------
--- ModConfigurationScreen Injection
--- Replace StandardSpinner with BindButton like the one in OptionsScreen
-AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
-  if self.modname ~= modname then return end -- avoid messing up other mods
-  local bind_button = 'keybind_button@' .. modname -- avoid being messed up by other mods
-
-  for _, widget in ipairs(self.options_scroll_list:GetListWidgets()) do
-    local spinner = widget.opt.spinner
-    local button = BindButton({
-      width = 225, -- spinner_width
-      height = 40, -- item_height
-      text_size = 25, -- same as StandardSpinner's default
-      text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
-      offset = 0, -- put unbinding_btn closer
-      OnBind = function(key)
-        self.options[widget.real_index].value = key
-        widget.opt.data.selected_value = key
-        if key ~= widget.opt.data.initial_value then self:MakeDirty() end
-      end,
-    })
-    button:SetPosition(spinner:GetPosition()) -- take original spinner's place
-
-    widget.opt[bind_button] = widget.opt:AddChild(button)
-    widget.opt.focus_forward = function() return button.shown and button or spinner end
-  end
-
-  local OldApplyDataToWidget = self.options_scroll_list.update_fn
-  self.options_scroll_list.update_fn = function(context, widget, data, ...)
-    OldApplyDataToWidget(context, widget, data, ...)
-    local button = widget.opt[bind_button]
-    button:Hide()
-    if not data or data.is_header then return end
-
-    for _, config in ipairs(modinfo.configuration_options) do
-      if config.name == data.option.name then
-        if config.options ~= modinfo.keys then return end
-
-        widget.opt.spinner:Hide()
-        button.title = config.label
-        button.default = config.default
-        button.initial = data.initial_value
-        button:Bind(data.selected_value)
-        button:Show()
-
-        return
-      end
-    end
-  end
-
-  self.options_scroll_list:RefreshView()
-end)
