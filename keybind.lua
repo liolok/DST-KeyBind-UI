@@ -122,11 +122,13 @@ local BindEntry = Class(Widget, function(self, parent, conf)
       _key[conf.name] = key
       parent:MakeDirty()
     end,
-}))
+  }))
   self.button:SetPosition(x + label_width + 15 + button_width / 2, 0)
 
   -- rtk0c: OptionsScreen:RefreshControls() assumes the existence of these, add them to make it not crash.
-  self.controlId, self.control, self.changed_image = 0, {}, self.button.changed_image
+  self.controlId, self.control = 0, {}
+  self.changed_image = { Show = function() end, Hide = function() end }
+  self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 
   self.focus_forward = self.button
 end)
@@ -144,7 +146,9 @@ local Header = Class(Widget, function(self, title)
   self.bg:SetScale(1.025, 1)
 
   -- rtk0c: OptionsScreen:RefreshControls() assumes the existence of these, add them to make it not crash.
-  self.controlId, self.control, self.changed_image = 0, {}, { Show = function() end, Hide = function() end }
+  self.controlId, self.control = 0, {} -- use first item's ID
+  self.changed_image = { Show = function() end, Hide = function() end }
+  self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 end)
 
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
