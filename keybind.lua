@@ -188,7 +188,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
       height = 40, -- item_height
       text_size = 25, -- same as StandardSpinner's default
       text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
-      offset = -10, -- put unbinding_btn closer
+      offset = 0, -- put unbinding_btn closer
       OnBind = function(key)
         self.options[widget.real_index].value = key
         widget.opt.data.selected_value = key
