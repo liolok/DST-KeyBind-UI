@@ -36,7 +36,7 @@ end
 -- Adapted from screens/redux/optionsscreen.lua: BuildControlGroup()
 local BindButton = Class(Widget, function(self, param)
   Widget._ctor(self, modname .. ':KeyBindButton')
-  self.OnChanged = param.OnChanged
+  self.OnBind = param.OnBind
   self.title = param.title
   self.default = param.default
   self.initial = param.initial
@@ -57,19 +57,19 @@ local BindButton = Class(Widget, function(self, param)
 
   self.unbinding_btn = self:AddChild(ImageButton('images/global_redux.xml', 'close.tex', 'close.tex'))
   self.unbinding_btn:SetPosition(param.width / 2 + (param.offset or 10), 0)
-  self.unbinding_btn:SetOnClick(function() self:Set('KEY_DISABLED') end)
+  self.unbinding_btn:SetOnClick(function() self:Bind('KEY_DISABLED') end)
   self.unbinding_btn:SetHoverText(S.UNBIND)
   self.unbinding_btn:SetScale(0.4, 0.4)
 
   self.focus_forward = self.binding_btn
 end)
 
-function BindButton:Set(key)
+function BindButton:Bind(key)
   self.binding_btn:SetText(Localize(key))
+  self.OnBind(key)
   if key == self.initial then
     self.changed_image:Hide()
   else
-    self.OnChanged(key)
     self.changed_image:Show()
   end
 end
@@ -81,7 +81,7 @@ function BindButton:PopupKeyBindDialog()
 
   dialog.OnRawKey = function(_, keycode, down)
     if down or not valid[keycode] then return end -- wait for releasing valid key
-    self:Set(valid[keycode])
+    self:Bind(valid[keycode])
     TheFrontEnd:PopScreen()
     TheFrontEnd:GetSound():PlaySound('dontstarve/HUD/click_move')
   end
@@ -118,9 +118,9 @@ local BindEntry = Class(Widget, function(self, parent, conf)
     initial = _key[conf.name],
     width = button_width,
     height = button_height,
-    OnChanged = function(key)
+    OnBind = function(key)
+      if _key[conf.name] ~= key then parent:MakeDirty() end
       _key[conf.name] = key
-      parent:MakeDirty()
     end,
   }))
   self.button:SetPosition(x + label_width + 15 + button_width / 2, 0)
@@ -189,10 +189,10 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
       text_size = 25, -- same as StandardSpinner's default
       text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
       offset = -10, -- put unbinding_btn closer
-      OnChanged = function(key)
+      OnBind = function(key)
         self.options[widget.real_index].value = key
         widget.opt.data.selected_value = key
-        self:MakeDirty()
+        if key ~= widget.opt.data.initial_value then self:MakeDirty() end
       end,
     })
     button:SetPosition(spinner:GetPosition()) -- take original spinner's place
@@ -216,7 +216,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
         button.title = config.label
         button.default = config.default
         button.initial = data.initial_value
-        button:Set(data.selected_value)
+        button:Bind(data.selected_value)
         button:Show()
 
         return
