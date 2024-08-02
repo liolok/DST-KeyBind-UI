@@ -222,7 +222,7 @@ end)
 local Header = Class(Widget, function(self, title)
   Widget._ctor(self, modname .. ':Header')
 
-  self.txt = self:AddChild(Text(G.HEADERFONT, 30, title, G.UICOLOURS.GOLD_SELECTED))
+  self.txt = self:AddChild(Text(G.HEADERFONT, 32, title, G.UICOLOURS.GOLD_SELECTED))
   self.txt:SetPosition(-60, 0)
 
   self.bg = self:AddChild(TEMPLATES.ListItemBackground(700, 48)) -- only to be more scrollable
