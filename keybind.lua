@@ -163,7 +163,7 @@ end)
 local _key = {} -- to track bindings outside ModConfigurationScreen
 
 -- Initialize bindings
-AddClassPostConstruct('screens/redux/multiplayermainscreen', function()
+AddGamePostInit(function()
   if type(KeyBind) ~= 'function' then return end
   for _, config in ipairs(modinfo.configuration_options) do
     if config.options == KEYS then
@@ -237,7 +237,7 @@ end)
 
 -- Add mod name header and keybind entries to the list in "Options > Controls"
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
-  if type(KeyBind) ~= 'function' then return end
+  if #_key == 0 then return end
   -- rtk0c: Reusing the same list is fine, per the current logic in ScrollableList:SetList();
   -- Don't call ScrollableList:AddItem() one by one to avoid wasting time recalcuating the list size.
   local cl = self.kb_controllist
