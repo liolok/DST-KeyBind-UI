@@ -25,6 +25,8 @@ local TEMPLATES = require('widgets/redux/templates')
 
 local KEYS = modinfo.keys or {}
 
+local bind_button = 'keybind_button@' .. modname -- avoid being messed up by other mods
+
 -- "KEY_*" to code number or nil
 local function Raw(key) return G.rawget(G, key) end
 
@@ -109,7 +111,6 @@ end
 
 AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
   if self.modname ~= modname then return end -- avoid messing up other mods
-  local bind_button = 'keybind_button@' .. modname -- avoid being messed up by other mods
 
   for _, widget in ipairs(self.options_scroll_list:GetListWidgets()) do
     local spinner = widget.opt.spinner
@@ -196,7 +197,7 @@ local BindEntry = Class(Widget, function(self, parent, conf)
   self.label:SetPosition(x + label_width / 2, 0)
   self.label:SetClickable(false)
 
-  self.button = self:AddChild(BindButton({
+  local button = BindButton({
     title = conf.label,
     default = conf.default,
     initial = _key[conf.name],
@@ -206,15 +207,16 @@ local BindEntry = Class(Widget, function(self, parent, conf)
       if _key[conf.name] ~= key then parent:MakeDirty() end
       _key[conf.name] = key
     end,
-  }))
-  self.button:SetPosition(x + label_width + 15 + button_width / 2, 0)
+  })
+  button:SetPosition(x + label_width + 15 + button_width / 2, 0)
+  self[bind_button] = self:AddChild(button)
 
   -- rtk0c: OptionsScreen:RefreshControls() assumes the existence of these, add them to make it not crash.
-  self.controlId, self.control = 0, {}
+  self.controlId, self.control = 0, {} -- use first item's ID
   self.changed_image = { Show = function() end, Hide = function() end }
   self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 
-  self.focus_forward = self.button
+  self.focus_forward = button
 end)
 
 local Header = Class(Widget, function(self, title)
@@ -251,6 +253,16 @@ AddClassPostConstruct('screens/redux/optionsscreen', function(self)
   end
   cl:SetList(cl.items, true)
 end)
+
+-- Reset to default binds after "Reset Binds"
+local OldLoadDefaultControls = OptionsScreen.LoadDefaultControls
+function OptionsScreen:LoadDefaultControls()
+  for _, widget in ipairs(self.kb_controllist.items) do
+    local button = widget[bind_button]
+    if button then button:Bind(button.default) end
+  end
+  return OldLoadDefaultControls(self)
+end
 
 -- Sync binds to mod config after "Apply" and "Accept Changes"
 local OldSave = OptionsScreen.Save
