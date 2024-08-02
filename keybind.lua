@@ -23,16 +23,23 @@ local OptionsScreen = require('screens/redux/optionsscreen')
 local PopupDialogScreen = require('screens/redux/popupdialog')
 local TEMPLATES = require('widgets/redux/templates')
 
-local KEYS = modinfo.keys or {}
+-- all supported keys
+local KEYS = modinfo.keys
 
-local bind_button = 'keybind_button@' .. modname -- avoid being messed up by other mods
+local KEYBIND_CONFIGS = {}
+for _, config in ipairs(modinfo.configuration_options or {}) do
+  if config.options == KEYS then table.insert(KEYBIND_CONFIGS, config) end
+end
+
+-- unique child widget name to avoid being messed up by other mods
+local bind_button = 'keybind_button@' .. modname
 
 -- "KEY_*" to code number or nil
 local function Raw(key) return G.rawget(G, key) end
 
 -- code number to "KEY_*"
 local valid = {}
-for _, option in ipairs(KEYS) do
+for _, option in ipairs(KEYS or {}) do
   local key = option.data
   local num = Raw(key)
   if num then valid[num] = key end
@@ -45,7 +52,8 @@ local function Localize(key)
 end
 
 --------------------------------------------------------------------------------
--- Button widget that pops up a dialog screen to bind key
+-- Button widget to show and change bind
+
 -- Adapted from screens/redux/optionsscreen.lua: BuildControlGroup()
 local BindButton = Class(Widget, function(self, param)
   Widget._ctor(self, modname .. ':KeyBindButton')
@@ -127,7 +135,6 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
       end,
     })
     button:SetPosition(spinner:GetPosition()) -- take original spinner's place
-
     widget.opt[bind_button] = widget.opt:AddChild(button)
     widget.opt.focus_forward = function() return button.shown and button or spinner end
   end
@@ -138,18 +145,14 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
     local button = widget.opt[bind_button]
     button:Hide()
     if not data or data.is_header then return end
-
-    for _, config in ipairs(modinfo.configuration_options) do
+    for _, config in ipairs(KEYBIND_CONFIGS) do
       if config.name == data.option.name then
-        if config.options ~= KEYS then return end
-
         widget.opt.spinner:Hide()
         button.title = config.label
         button.default = config.default
         button.initial = data.initial_value
         button:Bind(data.selected_value)
         button:Show()
-
         return
       end
     end
@@ -159,22 +162,20 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
 end)
 
 --------------------------------------------------------------------------------
--- OptionsScreen Injection
-
-local _key = {} -- to track binds outside ModConfigurationScreen
-
 -- Initialize binds
+
+local _key = {} -- config name to key, to track binds outside ModConfigurationScreen
 AddGamePostInit(function()
-  if type(KeyBind) ~= 'function' then return end
-  for _, config in ipairs(modinfo.configuration_options) do
-    if config.options == KEYS then
-      local name = config.name
-      local key = GetModConfigData(name)
-      _key[name] = key
-      KeyBind(name, Raw(key))
-    end
+  for _, config in ipairs(KEYBIND_CONFIGS) do
+    local name = config.name
+    local key = GetModConfigData(name)
+    _key[name] = key
+    KeyBind(name, Raw(key))
   end
 end)
+
+--------------------------------------------------------------------------------
+-- Widgets to append to item list in "Options/Settings > Controls"
 
 -- Adapted from screens/redux/optionsscreen.lua: _BuildControls()
 local BindEntry = Class(Widget, function(self, parent, conf)
@@ -198,11 +199,11 @@ local BindEntry = Class(Widget, function(self, parent, conf)
   self.label:SetClickable(false)
 
   local button = BindButton({
+    width = button_width,
+    height = button_height,
     title = conf.label,
     default = conf.default,
     initial = _key[conf.name],
-    width = button_width,
-    height = button_height,
     OnBind = function(key)
       if _key[conf.name] ~= key then parent:MakeDirty() end
       _key[conf.name] = key
@@ -237,21 +238,20 @@ local Header = Class(Widget, function(self, title)
   self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 end)
 
+--------------------------------------------------------------------------------
+-- OptionsScreen Injection
+
 -- Add mod name header and keybind entries to the list in "Options > Controls"
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
-  local keybinds = {}
-  for _, config in ipairs(modinfo.configuration_options) do
-    if _key[config.name] then table.insert(keybinds, config) end
-  end
-  if #keybinds == 0 then return end
   -- rtk0c: Reusing the same list is fine, per the current logic in ScrollableList:SetList();
   -- Don't call ScrollableList:AddItem() one by one to avoid wasting time recalcuating the list size.
-  local cl = self.kb_controllist
-  table.insert(cl.items, cl:AddChild(Header(modinfo.name)))
-  for _, config in ipairs(keybinds) do
-    table.insert(cl.items, cl:AddChild(BindEntry(self, config)))
+  local clist = self.kb_controllist
+  local items = clist.items
+  if #KEYBIND_CONFIGS > 0 then table.insert(items, clist:AddChild(Header(modinfo.name))) end
+  for _, config in ipairs(KEYBIND_CONFIGS) do
+    table.insert(items, clist:AddChild(BindEntry(self, config)))
   end
-  cl:SetList(cl.items, true)
+  clist:SetList(items, true)
 end)
 
 -- Reset to default binds after "Reset Binds"
