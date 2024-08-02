@@ -247,7 +247,7 @@ AddClassPostConstruct('screens/redux/optionsscreen', function(self)
   local cl = self.kb_controllist
   table.insert(cl.items, cl:AddChild(Header(modinfo.name)))
   for _, config in ipairs(keybinds) do
-    table.insert(cl.items, cl:AddChild(BindEntry(self, config))) end
+    table.insert(cl.items, cl:AddChild(BindEntry(self, config)))
   end
   cl:SetList(cl.items, true)
 end)
