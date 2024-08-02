@@ -237,13 +237,17 @@ end)
 
 -- Add mod name header and keybind entries to the list in "Options > Controls"
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
-  if #_key == 0 then return end
+  local keybinds = {}
+  for _, config in ipairs(modinfo.configuration_options) do
+    if _key[config.name] then table.insert(keybinds, config) end
+  end
+  if #keybinds == 0 then return end
   -- rtk0c: Reusing the same list is fine, per the current logic in ScrollableList:SetList();
   -- Don't call ScrollableList:AddItem() one by one to avoid wasting time recalcuating the list size.
   local cl = self.kb_controllist
   table.insert(cl.items, cl:AddChild(Header(modinfo.name)))
-  for _, config in ipairs(modinfo.configuration_options) do
-    if _key[config.name] then table.insert(cl.items, cl:AddChild(BindEntry(self, config))) end
+  for _, config in ipairs(keybinds) do
+    table.insert(cl.items, cl:AddChild(BindEntry(self, config))) end
   end
   cl:SetList(cl.items, true)
 end)
