@@ -2,7 +2,7 @@
 
 [中文说明](./README.zh.md)
 
-Easy key binding for your mod, in mod configuration and also "Settings > Controls".
+Easy key binds for your mod. Beside mod configuration, also support hot-rebind in "Settings > Controls".
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ for i = 1, #keys do
 end -- keys[1].description: 'Disabled', keys[1].data: 'KEY_DISABLED'
 ```
 
-Then add key binding configuration like this:
+Then add a configuration:
 
 ```lua
 configuration_options = {
@@ -42,10 +42,10 @@ configuration_options = {
 >
 > For example, use `default = 'KEY_DISABLED'` to bind no key by default.
 
-Copy `keybind.lua` to your mod folder or sub-folder, and in `modmain.lua`:
+Copy `keybind.lua` to your mod folder, import it and implement actual logic in `modmain.lua`:
 
 ```lua
-modimport('keybind') -- or other relative path you put keybind.lua
+modimport('keybind') -- relative path of keybind.lua
 
 local function YourFn() print('Do your things here!') end
 
@@ -60,3 +60,8 @@ end
 > Note: First argument of function `KeyBind` is config name, in this case we only bind one key so no need of it.
 >
 > For more than one key binding example, see `modinfo.lua` and `modmain.lua` in this repository.
+
+## Credit
+
+This is my fork of rtk0c's [KeybindMagic](https://github.com/rtk0c/dont-starve-mods/tree/master/KeybindMagic),
+mod configuration injection part was originally adapted from Tony's [Lazy Controls](https://steamcommunity.com/sharedfiles/filedetails/?id=2111412487) by me.

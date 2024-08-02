@@ -6,7 +6,7 @@
 
 ## 快速上手
 
-在 `modinfo.lua` 中定义所有支持的键位：
+在 `modinfo.lua` 中，定义所有支持的键位：
 
 ```lua
 keys = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, need to match constants.lua too.
@@ -24,14 +24,14 @@ for i = 1, #keys do
 end -- keys[1].description: 'Disabled', keys[1].data: 'KEY_DISABLED'
 ```
 
-然后添加键位绑定对应的模组配置选项：
+然后添加一个配置：
 
 ```lua
 configuration_options = {
   {
-    name = 'keybind_1', -- 开发者用的选项名称
-    label = 'KeyBind 1', -- 玩家看到的选项名称
-    hover = 'Description for KeyBind 1', -- 玩家看到的选项描述
+    name = 'keybind_1', -- 开发者用的配置名称
+    label = 'KeyBind 1', -- 玩家看到的配置名称
+    hover = 'Description for KeyBind 1', -- 玩家看到的配置描述
     default = 'KEY_F1', -- 默认键位
     options = keys, -- 所有键位选择
   },
@@ -42,10 +42,10 @@ configuration_options = {
 >
 > 例如 `default = 'KEY_DISABLED'` 表示默认不绑定任何键位。
 
-将 `keybind.lua` 复制到你的模组目录或者子目录，`modmain.lua` 调用示例：
+将 `keybind.lua` 复制到模组目录，在 `modmain.lua` 中导入并实现业务逻辑：
 
 ```lua
-modimport('keybind') -- 或者其他 keybind.lua 所在的相对路径
+modimport('keybind') -- keybind.lua 实际所在的相对路径
 
 local function YourFn() print('键位绑定的业务逻辑代码') end
 
@@ -57,6 +57,11 @@ function KeyBind(_, key)
 end
 ```
 
-> 说明：函数 `KeyBind` 的第一个参数是配置选项名称，此处由于我们只绑定了一个键位所以不需要它。
+> 说明：函数 `KeyBind` 的第一个参数是配置名称，此处由于我们只绑定了一个键位所以不需要它。
 >
-> 多个键位的绑定示例，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
+> 对于多个键位的绑定，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
+
+## 致谢
+
+原版是 rtk0c 的 [KeybindMagic](https://github.com/rtk0c/dont-starve-mods/tree/master/KeybindMagic)，
+模组配置注入部分起初由我从 Tony 的 [Lazy Controls](https://steamcommunity.com/sharedfiles/filedetails/?id=2111412487) 改版而来。
