@@ -160,9 +160,9 @@ end)
 --------------------------------------------------------------------------------
 -- OptionsScreen Injection
 
-local _key = {} -- to track bindings outside ModConfigurationScreen
+local _key = {} -- to track binds outside ModConfigurationScreen
 
--- Initialize bindings
+-- Initialize binds
 AddGamePostInit(function()
   if type(KeyBind) ~= 'function' then return end
   for _, config in ipairs(modinfo.configuration_options) do
@@ -252,13 +252,13 @@ AddClassPostConstruct('screens/redux/optionsscreen', function(self)
   cl:SetList(cl.items, true)
 end)
 
--- Sync bindings to mod config when saving in OptionsScreen
-local OldOptionsScreenSave = OptionsScreen.Save
+-- Sync binds to mod config after "Apply" and "Accept Changes"
+local OldSave = OptionsScreen.Save
 function OptionsScreen:Save(...)
   for config_name, key in pairs(_key) do
-    KeyBind(config_name, Raw(key)) -- let mod change binding
+    KeyBind(config_name, Raw(key)) -- let mod change bind
     G.KnownModIndex:SetConfigurationOption(modname, config_name, key)
   end
   G.KnownModIndex:SaveHostConfiguration(modname) -- save to disk
-  return OldOptionsScreenSave(self, ...)
+  return OldSave(self, ...)
 end
