@@ -120,42 +120,51 @@ end
 AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
   if self.modname ~= modname then return end -- avoid messing up other mods
 
+  local keybinds = {} -- config name to config
   for _, widget in ipairs(self.options_scroll_list:GetListWidgets()) do
-    local spinner = widget.opt.spinner
+    local config_name = widget.opt.data.option.name
+    for _, config in ipairs(KEYBIND_CONFIGS) do
+      if config.name == config_name then
+        keybinds[config.name] = config
+        break
+      end
+    end
+  end
+
+  local OldApplyDataToWidget = self.options_scroll_list.update_fn
+  self.options_scroll_list.update_fn = function(context, widget, data, ...)
+    OldApplyDataToWidget(context, widget, data, ...)
+    local opt = widget.opt
+
+    local old_button = opt[bind_button]
+    if old_button then old_button:Kill() end -- clear old BindButton if stuck here
+
+    if not data or data.is_header then return end -- not possible keybind config
+
+    local config = keybinds[data.option.name]
+    if not config then return end -- not keybind config
+
     local button = BindButton({
       width = 225, -- spinner_width
       height = 40, -- item_height
       text_size = 25, -- same as StandardSpinner's default
       text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
       offset = 0, -- put unbinding_btn closer
+      title = config.label,
+      default = config.default,
+      initial = data.initial_value,
       OnBind = function(key)
         self.options[widget.real_index].value = key
-        widget.opt.data.selected_value = key
-        if key ~= widget.opt.data.initial_value then self:MakeDirty() end
+        data.selected_value = key
+        if key ~= data.initial_value then self:MakeDirty() end
       end,
     })
-    button:SetPosition(spinner:GetPosition()) -- take original spinner's place
-    widget.opt[bind_button] = widget.opt:AddChild(button)
-    widget.opt.focus_forward = function() return button.shown and button or spinner end
-  end
+    button:Bind(data.selected_value)
+    button:SetPosition(opt.spinner:GetPosition()) -- take original StandardSpinner's place
 
-  local OldApplyDataToWidget = self.options_scroll_list.update_fn
-  self.options_scroll_list.update_fn = function(context, widget, data, ...)
-    OldApplyDataToWidget(context, widget, data, ...)
-    local button = widget.opt[bind_button]
-    button:Hide()
-    if not data or data.is_header then return end
-    for _, config in ipairs(KEYBIND_CONFIGS) do
-      if config.name == data.option.name then
-        widget.opt.spinner:Hide()
-        button.title = config.label
-        button.default = config.default
-        button.initial = data.initial_value
-        button:Bind(data.selected_value)
-        button:Show()
-        return
-      end
-    end
+    opt.spinner:Hide()
+    opt.focus_forward = button
+    opt[bind_button] = opt:AddChild(button)
   end
 
   self.options_scroll_list:RefreshView()
