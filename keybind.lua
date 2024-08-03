@@ -119,9 +119,9 @@ end
 
 AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
   if self.modname ~= modname then return end -- avoid messing up other mods
-
+  local list = self.options_scroll_list
   local keybinds = {} -- config name to config
-  for _, widget in ipairs(self.options_scroll_list:GetListWidgets()) do
+  for _, widget in ipairs(list:GetListWidgets()) do
     local config_name = widget.opt.data.option.name
     for _, config in ipairs(KEYBIND_CONFIGS) do
       if config.name == config_name then
@@ -129,45 +129,50 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
         break
       end
     end
+    if keybinds[config_name] then
+      local opt = widget.opt
+      local spinner = opt.spinner
+      local button = BindButton({
+        width = 225, -- spinner_width
+        height = 40, -- item_height
+        text_size = 25, -- same as StandardSpinner's default
+        text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
+        offset = 0, -- put unbinding_btn closer
+        OnBind = function(key)
+          self.options[widget.real_index].value = key
+          opt.data.selected_value = key
+          if key ~= opt.data.initial_value then self:MakeDirty() end
+        end,
+      })
+      button:SetPosition(spinner:GetPosition()) -- take original StandardSpinner's place
+      opt[bind_button] = opt:AddChild(button)
+      opt.focus_forward = function() return button.shown and button or spinner end
+    end
   end
 
-  local OldApplyDataToWidget = self.options_scroll_list.update_fn
-  self.options_scroll_list.update_fn = function(context, widget, data, ...)
+  local OldApplyDataToWidget = list.update_fn
+  list.update_fn = function(context, widget, data, ...)
     OldApplyDataToWidget(context, widget, data, ...)
     local opt = widget.opt
-
-    local old_button = opt[bind_button]
-    if old_button then old_button:Kill() end -- clear old BindButton if stuck here
-
-    if not data or data.is_header then return end -- not possible keybind config
-
+    -- hide BindButton first
+    local button = opt[bind_button]
+    if button then button:Hide() end
+    -- not keybind config
+    if not data or data.is_header then return end
     local config = keybinds[data.option.name]
-    if not config then return end -- not keybind config
+    if not config then return end
 
-    local button = BindButton({
-      width = 225, -- spinner_width
-      height = 40, -- item_height
-      text_size = 25, -- same as StandardSpinner's default
-      text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
-      offset = 0, -- put unbinding_btn closer
-      title = config.label,
-      default = config.default,
-      initial = data.initial_value,
-      OnBind = function(key)
-        self.options[widget.real_index].value = key
-        data.selected_value = key
-        if key ~= data.initial_value then self:MakeDirty() end
-      end,
-    })
+    button.title = config.label
+    button.default = config.default
+    button.initial = data.initial_value
     button:Bind(data.selected_value)
-    button:SetPosition(opt.spinner:GetPosition()) -- take original StandardSpinner's place
+    button:Show()
 
     opt.spinner:Hide()
     opt.focus_forward = button
-    opt[bind_button] = opt:AddChild(button)
   end
 
-  self.options_scroll_list:RefreshView()
+  list:RefreshView()
 end)
 
 --------------------------------------------------------------------------------
