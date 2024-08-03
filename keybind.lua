@@ -125,15 +125,15 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
   local list = self.options_scroll_list
   local keybinds = {} -- config name to config
   for _, widget in ipairs(list:GetListWidgets()) do
-    local config_name = widget.opt.data.option.name
+    local opt = widget.opt
+    local this_config = opt.data and opt.data.option or {}
     for _, config in ipairs(KEYBIND_CONFIGS) do
-      if config.name == config_name then
+      if config.name == this_config.name then
         keybinds[config.name] = config
         break
       end
     end
-    if keybinds[config_name] then
-      local opt = widget.opt
+    if keybinds[this_config.name] then
       local spinner = opt.spinner -- original StandardSpinner
       local button = BindButton({
         width = 225, -- spinner_width
