@@ -131,7 +131,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
     end
     if keybinds[config_name] then
       local opt = widget.opt
-      local spinner = opt.spinner
+      local spinner = opt.spinner -- original StandardSpinner
       local button = BindButton({
         width = 225, -- spinner_width
         height = 40, -- item_height
@@ -144,7 +144,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
           if key ~= opt.data.initial_value then self:MakeDirty() end
         end,
       })
-      button:SetPosition(spinner:GetPosition()) -- take original StandardSpinner's place
+      button:SetPosition(spinner:GetPosition()) -- take its place
       opt[bind_button] = opt:AddChild(button)
       opt.focus_forward = function() return button.shown and button or spinner end
     end
@@ -157,7 +157,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
     -- hide BindButton first
     local button = opt[bind_button]
     if button then button:Hide() end
-    -- not keybind config
+    -- continue only if this config is a keybind
     if not data or data.is_header then return end
     local config = keybinds[data.option.name]
     if not config then return end
@@ -167,9 +167,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
     button.initial = data.initial_value
     button:Bind(data.selected_value)
     button:Show()
-
     opt.spinner:Hide()
-    opt.focus_forward = button
   end
 
   list:RefreshView()
