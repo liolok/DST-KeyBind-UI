@@ -13,15 +13,18 @@
 -- substantial portions of the Software.
 
 local G = GLOBAL
+local C = G.UICOLOURS
 local S = G.STRINGS.UI.CONTROLSSCREEN
 
 local Widget = require('widgets/widget')
+-- ModConfigurationScreen Injection
 local Image = require('widgets/image')
 local ImageButton = require('widgets/imagebutton')
-local Text = require('widgets/text')
-local OptionsScreen = require('screens/redux/optionsscreen')
 local PopupDialogScreen = require('screens/redux/popupdialog')
+-- OptionsScreen Injection
+local Text = require('widgets/text')
 local TEMPLATES = require('widgets/redux/templates')
+local OptionsScreen = require('screens/redux/optionsscreen')
 
 -- all supported keys
 local KEYS = modinfo.keys
@@ -72,8 +75,8 @@ local BindButton = Class(Widget, function(self, param)
   self.binding_btn:ForceImageSize(param.width, param.height)
   self.binding_btn:SetText(Localize(param.initial))
   self.binding_btn:SetTextSize(param.text_size or 30)
-  self.binding_btn:SetTextColour(param.text_color or G.UICOLOURS.GOLD_CLICKABLE)
-  self.binding_btn:SetTextFocusColour(G.UICOLOURS.GOLD_FOCUS)
+  self.binding_btn:SetTextColour(param.text_color or C.GOLD_CLICKABLE)
+  self.binding_btn:SetTextFocusColour(C.GOLD_FOCUS)
   self.binding_btn:SetFont(G.CHATFONT)
 
   self.unbinding_btn = self:AddChild(ImageButton('images/global_redux.xml', 'close.tex', 'close.tex'))
@@ -136,7 +139,7 @@ AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
         width = 225, -- spinner_width
         height = 40, -- item_height
         text_size = 25, -- same as StandardSpinner's default
-        text_color = G.UICOLOURS.GOLD, -- same as StandardSpinner's default
+        text_color = C.GOLD, -- same as StandardSpinner's default
         offset = 0, -- put unbinding_btn closer
         OnBind = function(key)
           self.options[widget.real_index].value = key
@@ -204,7 +207,7 @@ local BindEntry = Class(Widget, function(self, parent, conf)
   self.bg:SetPosition(-60, 0)
   self.bg:SetScale(1.025, 1)
 
-  self.label = self:AddChild(Text(G.CHATFONT, 28, conf.label, G.UICOLOURS.GOLD_UNIMPORTANT))
+  self.label = self:AddChild(Text(G.CHATFONT, 28, conf.label, C.GOLD_UNIMPORTANT))
   self.label:SetHAlign(G.ANCHOR_LEFT)
   self.label:SetRegionSize(label_width, 50)
   self.label:SetPosition(x + label_width / 2, 0)
@@ -235,7 +238,7 @@ end)
 local Header = Class(Widget, function(self, title)
   Widget._ctor(self, modname .. ':Header')
 
-  self.txt = self:AddChild(Text(G.HEADERFONT, 32, title, G.UICOLOURS.GOLD_SELECTED))
+  self.txt = self:AddChild(Text(G.HEADERFONT, 32, title, C.GOLD_SELECTED))
   self.txt:SetPosition(-60, 0)
 
   self.bg = self:AddChild(TEMPLATES.ListItemBackground(700, 48)) -- only to be more scrollable
