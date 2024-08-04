@@ -179,35 +179,32 @@ end)
 --------------------------------------------------------------------------------
 -- Initialize binds
 
-local _key = {} -- config name to key, to track binds outside ModConfigurationScreen
 AddGamePostInit(function()
   for _, config in ipairs(KEYBIND_CONFIGS) do
     local name = config.name
-    local key = GetModConfigData(name)
-    _key[name] = key
-    KeyBind(name, Raw(key))
+    KeyBind(name, Raw(GetModConfigData(name)))
   end
 end)
 
 --------------------------------------------------------------------------------
 -- Widgets to append to item list in "Options/Settings > Controls"
-
+local _key = {} -- config to key, to track binds in OptionsScreen
 -- Adapted from screens/redux/optionsscreen.lua: _BuildControls()
-local BindEntry = Class(Widget, function(self, parent, conf)
+local BindEntry = Class(Widget, function(self, parent, config)
   Widget._ctor(self, modname .. ':KeyBindEntry')
   local x = -371 -- x coord of the left edge
   local button_width = 250 -- controls_ui.action_btn_width
   local button_height = 48 -- controls_ui.action_height
   local label_width = 375 -- controls_ui.action_label_width
 
-  self:SetHoverText(conf.hover, { offset_x = -60, offset_y = 60, wordwrap = true })
+  self:SetHoverText(config.hover, { offset_x = -60, offset_y = 60, wordwrap = true })
   self:SetScale(1, 1, 0.75)
 
   self.bg = self:AddChild(TEMPLATES.ListItemBackground(700, button_height))
   self.bg:SetPosition(-60, 0)
   self.bg:SetScale(1.025, 1)
 
-  self.label = self:AddChild(Text(G.CHATFONT, 28, conf.label, C.GOLD_UNIMPORTANT))
+  self.label = self:AddChild(Text(G.CHATFONT, 28, config.label, C.GOLD_UNIMPORTANT))
   self.label:SetHAlign(G.ANCHOR_LEFT)
   self.label:SetRegionSize(label_width, 50)
   self.label:SetPosition(x + label_width / 2, 0)
@@ -216,12 +213,12 @@ local BindEntry = Class(Widget, function(self, parent, conf)
   local button = BindButton({
     width = button_width,
     height = button_height,
-    title = conf.label,
-    default = conf.default,
-    initial = _key[conf.name],
+    title = config.label,
+    default = config.default,
+    initial = _key[config],
     OnBind = function(key)
-      if _key[conf.name] ~= key then parent:MakeDirty() end
-      _key[conf.name] = key
+      if _key[config] ~= key then parent:MakeDirty() end
+      _key[config] = key
     end,
   })
   button:SetPosition(x + label_width + 15 + button_width / 2, 0)
@@ -264,6 +261,7 @@ AddClassPostConstruct('screens/redux/optionsscreen', function(self)
   local items = clist.items
   if #KEYBIND_CONFIGS > 0 then table.insert(items, clist:AddChild(Header(modinfo.name))) end
   for _, config in ipairs(KEYBIND_CONFIGS) do
+    _key[config] = GetModConfigData(config.name)
     table.insert(items, clist:AddChild(BindEntry(self, config)))
   end
   clist:SetList(items, true)
@@ -282,9 +280,9 @@ end
 -- Sync binds to mod config after "Apply" and "Accept Changes"
 local OldSave = OptionsScreen.Save
 function OptionsScreen:Save(...)
-  for config_name, key in pairs(_key) do
-    KeyBind(config_name, Raw(key)) -- let mod change bind
-    G.KnownModIndex:SetConfigurationOption(modname, config_name, key)
+  for config, key in pairs(_key) do
+    KeyBind(config.name, Raw(key)) -- let mod change bind
+    G.KnownModIndex:SetConfigurationOption(modname, config.name, key)
   end
   G.KnownModIndex:SaveHostConfiguration(modname) -- save to disk
   return OldSave(self, ...)
