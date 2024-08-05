@@ -26,33 +26,40 @@ local Text = require('widgets/text')
 local TEMPLATES = require('widgets/redux/templates')
 local OptionsScreen = require('screens/redux/optionsscreen')
 
--- all supported keys
-local KEYS = modinfo.keys
-
-local KEYBIND_CONFIGS = {}
-for _, config in ipairs(modinfo.configuration_options or {}) do
-  if config.options == KEYS then table.insert(KEYBIND_CONFIGS, config) end
-end
-
--- unique child widget name to avoid being messed up by other mods
-local bind_button = 'keybind_button@' .. modname
-
 -- "KEY_*" to code number or nil
 local function Raw(key) return G.rawget(G, key) end
 
 -- code number to "KEY_*"
-local valid = {}
-for _, option in ipairs(KEYS or {}) do
+local str = {}
+for _, option in ipairs(modinfo.keys) do
   local key = option.data
   local num = Raw(key)
-  if num then valid[num] = key end
+  if num then str[num] = key end
 end
+local function Stringify(keycode) return str[keycode] end
 
--- name or "- No Bind -"
+-- "KEY_*" to name or "- No Bind -"
 local function Localize(key)
   local num = Raw(key)
   return num and S.INPUTS[1][num] or S.INPUTS[9][2]
 end
+
+-- keybind configurations
+local configs = {}
+local is_keybind = {}
+for _, config in ipairs(modinfo.configuration_options) do
+  if config.options == modinfo.keys then
+    table.insert(configs, config)
+    is_keybind[config.name] = true
+  end
+end
+
+-- initialize binds
+AddGamePostInit(function()
+  for name, _ in pairs(is_keybind) do
+    KeyBind(name, Raw(GetModConfigData(name)))
+  end
+end)
 
 --------------------------------------------------------------------------------
 -- Button widget to show and change bind
@@ -60,10 +67,11 @@ end
 -- Adapted from screens/redux/optionsscreen.lua: BuildControlGroup()
 local BindButton = Class(Widget, function(self, param)
   Widget._ctor(self, modname .. ':KeyBindButton')
-  self.OnBind = param.OnBind
   self.title = param.title
   self.default = param.default
   self.initial = param.initial
+  self.OnSet = param.OnSet
+  self.OnChanged = param.OnChanged
 
   self.changed_image = self:AddChild(Image('images/global_redux.xml', 'wardrobe_spinner_bg.tex'))
   self.changed_image:ScaleToSize(param.width, param.height)
@@ -81,19 +89,20 @@ local BindButton = Class(Widget, function(self, param)
 
   self.unbinding_btn = self:AddChild(ImageButton('images/global_redux.xml', 'close.tex', 'close.tex'))
   self.unbinding_btn:SetPosition(param.width / 2 + (param.offset or 10), 0)
-  self.unbinding_btn:SetOnClick(function() self:Bind('KEY_DISABLED') end)
+  self.unbinding_btn:SetOnClick(function() self:Set('KEY_DISABLED') end)
   self.unbinding_btn:SetHoverText(S.UNBIND)
   self.unbinding_btn:SetScale(0.4, 0.4)
 
   self.focus_forward = self.binding_btn
 end)
 
-function BindButton:Bind(key)
+function BindButton:Set(key)
   self.binding_btn:SetText(Localize(key))
-  self.OnBind(key)
+  self.OnSet(key)
   if key == self.initial then
     self.changed_image:Hide()
   else
+    self.OnChanged()
     self.changed_image:Show()
   end
 end
@@ -104,10 +113,9 @@ function BindButton:PopupKeyBindDialog()
   local dialog = PopupDialogScreen(self.title, text, buttons)
 
   dialog.OnRawKey = function(_, keycode, down)
-    if down then return end -- wait for releasing
-    local key = valid[keycode]
-    if not key then return end -- validate code number
-    self:Bind(key)
+    local key = Stringify(keycode)
+    if not key or down then return end -- wait for releasing valid key
+    self:Set(key)
     TheFrontEnd:PopScreen()
     TheFrontEnd:GetSound():PlaySound('dontstarve/HUD/click_move')
     return true
@@ -116,6 +124,9 @@ function BindButton:PopupKeyBindDialog()
   TheFrontEnd:PushScreen(dialog)
 end
 
+-- unique child widget name to avoid being messed up by other mods
+local BUTTON_NAME = 'keybind_button@' .. modname
+
 --------------------------------------------------------------------------------
 -- ModConfigurationScreen Injection
 -- Replace StandardSpinner with BindButton like the one in OptionsScreen
@@ -123,72 +134,47 @@ end
 AddClassPostConstruct('screens/redux/modconfigurationscreen', function(self)
   if self.modname ~= modname then return end -- avoid messing up other mods
   local list = self.options_scroll_list
-  local keybinds = {} -- config name to config
-  for _, widget in ipairs(list:GetListWidgets()) do
-    local opt = widget.opt
-    local this_config = opt.data and opt.data.option or {}
-    for _, config in ipairs(KEYBIND_CONFIGS) do
-      if config.name == this_config.name then
-        keybinds[config.name] = config
-        break
-      end
-    end
-    if keybinds[this_config.name] then
-      local spinner = opt.spinner -- original StandardSpinner
-      local button = BindButton({
-        width = 225, -- spinner_width
-        height = 40, -- item_height
-        text_size = 25, -- same as StandardSpinner's default
-        text_color = C.GOLD, -- same as StandardSpinner's default
-        offset = 0, -- put unbinding_btn closer
-        OnBind = function(key)
-          self.options[widget.real_index].value = key
-          opt.data.selected_value = key
-          if key ~= opt.data.initial_value then self:MakeDirty() end
-        end,
-      })
-      button:SetPosition(spinner:GetPosition()) -- take its place
-      opt[bind_button] = opt:AddChild(button)
-      opt.focus_forward = function() return button.shown and button or spinner end
-    end
-  end
-
   local OldApplyDataToWidget = list.update_fn
   list.update_fn = function(context, widget, data, ...)
     OldApplyDataToWidget(context, widget, data, ...)
     local opt = widget.opt
-    -- hide BindButton first
-    local button = opt[bind_button]
-    if button then button:Hide() end
-    -- continue only if this config is a keybind
-    if not data or data.is_header then return end
-    local config = keybinds[data.option.name]
-    if not config then return end
+    local spinner = opt.spinner -- original StandardSpinner
+    opt.focus_forward = spinner
+    if opt[BUTTON_NAME] then opt[BUTTON_NAME]:Kill() end
 
-    button.title = config.label
-    button.default = config.default
-    button.initial = data.initial_value
-    button:Bind(data.selected_value)
+    local config = data and data.option or {}
+    if not is_keybind[config.name] then return end
+    spinner:Hide()
+    local button = BindButton({
+      width = 225, -- spinner_width
+      height = 40, -- item_height
+      text_size = 25, -- same as StandardSpinner's default
+      text_color = C.GOLD, -- same as StandardSpinner's default
+      offset = 0, -- put unbinding_btn closer
+      title = config.label,
+      default = config.default,
+      initial = data.initial_value,
+      OnSet = function(key)
+        self.options[widget.real_index].value = key
+        data.selected_value = key
+      end,
+      OnChanged = function() self:MakeDirty() end,
+    })
+    button:SetPosition(spinner:GetPosition()) -- take its place
+    button:Set(data.selected_value)
     button:Show()
-    opt.spinner:Hide()
+    opt[BUTTON_NAME] = opt:AddChild(button)
+    opt.focus_forward = button
   end
-
   list:RefreshView()
 end)
 
 --------------------------------------------------------------------------------
--- Initialize binds
-
-AddGamePostInit(function()
-  for _, config in ipairs(KEYBIND_CONFIGS) do
-    local name = config.name
-    KeyBind(name, Raw(GetModConfigData(name)))
-  end
-end)
-
---------------------------------------------------------------------------------
 -- Widgets to append to item list in "Options/Settings > Controls"
-local _key = {} -- config to key, to track binds in OptionsScreen
+
+-- config to key, to track binds in OptionsScreen
+local _key = {}
+
 -- Adapted from screens/redux/optionsscreen.lua: _BuildControls()
 local BindEntry = Class(Widget, function(self, parent, config)
   Widget._ctor(self, modname .. ':KeyBindEntry')
@@ -210,26 +196,23 @@ local BindEntry = Class(Widget, function(self, parent, config)
   self.label:SetPosition(x + label_width / 2, 0)
   self.label:SetClickable(false)
 
-  local button = BindButton({
+  self[BUTTON_NAME] = self:AddChild(BindButton({
     width = button_width,
     height = button_height,
     title = config.label,
     default = config.default,
     initial = _key[config],
-    OnBind = function(key)
-      if _key[config] ~= key then parent:MakeDirty() end
-      _key[config] = key
-    end,
-  })
-  button:SetPosition(x + label_width + 15 + button_width / 2, 0)
-  self[bind_button] = self:AddChild(button)
+    OnSet = function(key) _key[config] = key end,
+    OnChanged = function() parent:MakeDirty() end,
+  }))
+  self[BUTTON_NAME]:SetPosition(x + label_width + 15 + button_width / 2, 0)
 
   -- rtk0c: OptionsScreen:RefreshControls() assumes the existence of these, add them to make it not crash.
   self.controlId, self.control = 0, {} -- use first item's ID
   self.changed_image = { Show = function() end, Hide = function() end }
   self.binding_btn = { SetText = function() end } -- OnControlMapped() calls this when first item changed
 
-  self.focus_forward = button
+  self.focus_forward = self[BUTTON_NAME]
 end)
 
 local Header = Class(Widget, function(self, title)
@@ -257,22 +240,22 @@ end)
 AddClassPostConstruct('screens/redux/optionsscreen', function(self)
   -- rtk0c: Reusing the same list is fine, per the current logic in ScrollableList:SetList();
   -- Don't call ScrollableList:AddItem() one by one to avoid wasting time recalcuating the list size.
-  local clist = self.kb_controllist
-  local items = clist.items
-  if #KEYBIND_CONFIGS > 0 then table.insert(items, clist:AddChild(Header(modinfo.name))) end
-  for _, config in ipairs(KEYBIND_CONFIGS) do
+  local list = self.kb_controllist
+  local items = list.items
+  if #configs > 0 then table.insert(items, list:AddChild(Header(modinfo.name))) end
+  for _, config in ipairs(configs) do
     _key[config] = GetModConfigData(config.name)
-    table.insert(items, clist:AddChild(BindEntry(self, config)))
+    table.insert(items, list:AddChild(BindEntry(self, config)))
   end
-  clist:SetList(items, true)
+  list:SetList(items, true)
 end)
 
 -- Reset to default binds after "Reset Binds"
 local OldLoadDefaultControls = OptionsScreen.LoadDefaultControls
 function OptionsScreen:LoadDefaultControls()
   for _, widget in ipairs(self.kb_controllist.items) do
-    local button = widget[bind_button]
-    if button then button:Bind(button.default) end
+    local button = widget[BUTTON_NAME]
+    if button then button:Set(button.default) end
   end
   return OldLoadDefaultControls(self)
 end
