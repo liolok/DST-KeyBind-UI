@@ -28,7 +28,10 @@ for i = 0, 10 do
   numbers[i + 1] = { description = i, data = i }
 end
 
+local function Header(title) return { name = title, options = { { description = '', data = 0 } }, default = 0 } end
+
 configuration_options = {
+  Header('Section 1'),
   {
     name = 'keybind_1',
     label = 'KeyBind 1',
@@ -71,6 +74,7 @@ configuration_options = {
     default = 'KEY_F6',
     options = keys,
   },
+  Header('Section 2'),
   {
     name = 'keybind_7',
     label = 'KeyBind 7',
