@@ -4,6 +4,8 @@ English | [中文](./README.zh.md)
 
 Easy key binds for your mod. Beside mod configuration, also support hot-rebind in "Settings > Controls".
 
+Supported key: Most keys of keyboard including number pad, mouse middle button and two side buttons.
+
 ## Quick Start
 
 In `modinfo.lua`, define all supported keys:
