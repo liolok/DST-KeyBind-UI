@@ -1,6 +1,6 @@
 # 饥荒联机版键位绑定
 
-[Documentation in English](./README.md)
+[English](./README.md) | 中文
 
 简单方便的模组键位绑定。在模组配置之外，还支持在游戏内「设置 > 控制」页面更改配置，实时生效无需重启。
 
@@ -67,7 +67,7 @@ end
 
 > 说明：函数 `KeyBind` 的第一个参数是配置名称，此处由于我们只绑定了一个键位所以不需要它。
 >
-> 对于多个键位的绑定，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
+> 对于更复杂的绑定，比如多个以及鼠标侧键中键，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
 
 ## 致谢
 

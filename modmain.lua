@@ -12,5 +12,15 @@ end
 local handler = {} -- config name to key event handlers
 function KeyBind(name, key)
   if handler[name] then handler[name]:Remove() end -- disable old binding
-  handler[name] = key and GLOBAL.TheInput:AddKeyDownHandler(key, callback[name]) or nil -- new binding or delete
+  if key ~= nil then -- new binding
+    if key >= 1000 then -- it's a mouse button
+      handler[name] = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
+        if button == key and down then callback[name]() end
+      end)
+    else -- it's a keyboard key
+      handler[name] = GLOBAL.TheInput:AddKeyDownHandler(key, callback[name])
+    end
+  else -- no binding
+    handler[name] = nil
+  end
 end

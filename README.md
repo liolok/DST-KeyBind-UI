@@ -1,6 +1,6 @@
 # KeyBind UI for Don't Starve Together
 
-[中文说明](./README.zh.md)
+English | [中文](./README.zh.md)
 
 Easy key binds for your mod. Beside mod configuration, also support hot-rebind in "Settings > Controls".
 
@@ -67,7 +67,7 @@ end
 
 > Note: First argument of function `KeyBind` is config name, in this case we only bind one key so no need of it.
 >
-> For more than one key binding example, see `modinfo.lua` and `modmain.lua` in this repository.
+> For more complex binding, such as multiple and mouse button, see `modinfo.lua` and `modmain.lua` in this repository.
 
 ## Credit
 

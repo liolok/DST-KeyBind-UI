@@ -26,10 +26,16 @@ local Text = require('widgets/text')
 local TEMPLATES = require('widgets/redux/templates')
 local OptionsScreen = require('screens/redux/optionsscreen')
 
--- "KEY_*" to code number or nil
-local function Raw(key) return G.rawget(G, key) end
+local MOUSE = { -- mouse button emoji => code number
+  ['\238\132\130'] = 1002, -- Middle Mouse Button
+  ['\238\132\131'] = 1005, -- Mouse Button 4
+  ['\238\132\132'] = 1006, -- Mouse Button 5
+}
 
--- code number to "KEY_*"
+-- "KEY_*" and mouse button emoji => code number or nil
+local function Raw(key) return MOUSE[key] or G.rawget(G, key) end
+
+-- code number to "KEY_*" and mouse button emoji
 local str = {}
 for _, option in ipairs(modinfo.keys) do
   local key = option.data
@@ -38,7 +44,7 @@ for _, option in ipairs(modinfo.keys) do
 end
 local function Stringify(keycode) return str[keycode] end
 
--- "KEY_*" to name or "- No Bind -"
+-- "KEY_*" and mouse button emoji => name or "- No Bind -"
 local function Localize(key)
   local num = Raw(key)
   return num and S.INPUTS[1][num] or S.INPUTS[9][2]
@@ -108,16 +114,28 @@ function BindButton:Set(key)
 end
 
 function BindButton:PopupKeyBindDialog()
+  local function Setup(key)
+    self:Set(key)
+    TheFrontEnd:PopScreen()
+    TheFrontEnd:GetSound():PlaySound('dontstarve/HUD/click_move')
+  end
+  local buttons = {}
+  for key, _ in pairs(MOUSE) do
+    for _, option in ipairs(modinfo.keys) do
+      if key == option.data then -- only add if existing in real options
+        table.insert(buttons, { text = key, cb = function() Setup(key) end })
+        break
+      end
+    end
+  end
+  table.insert(buttons, { text = S.CANCEL, cb = function() TheFrontEnd:PopScreen() end })
   local text = S.CONTROL_SELECT .. '\n\n' .. string.format(S.DEFAULT_CONTROL_TEXT, Localize(self.default))
-  local buttons = { { text = S.CANCEL, cb = function() TheFrontEnd:PopScreen() end } }
   local dialog = PopupDialogScreen(self.title, text, buttons)
 
   dialog.OnRawKey = function(_, keycode, down)
     local key = Stringify(keycode)
     if not key or down then return end -- wait for releasing valid key
-    self:Set(key)
-    TheFrontEnd:PopScreen()
-    TheFrontEnd:GetSound():PlaySound('dontstarve/HUD/click_move')
+    Setup(key)
     return true
   end
 
