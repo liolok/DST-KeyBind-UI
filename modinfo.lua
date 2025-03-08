@@ -15,8 +15,8 @@ local keyboard = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, n
   { 'Space', 'RAlt', 'RSuper', 'RCtrl', 'RShift', 'Enter', 'Backspace' },
   { 'Tilde', 'Minus', 'Equals', 'LeftBracket', 'RightBracket', 'Backslash', 'Semicolon', 'Period', 'Slash' }, -- punctuation
   { 'Up', 'Down', 'Left', 'Right', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown' }, -- navigation
-  { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Period', 'Divide', 'Multiply', 'Minus', 'Plus' }, -- numberic keypad
 }
+local numpad = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Period', 'Divide', 'Multiply', 'Minus', 'Plus' }
 local mouse = { '\238\132\130', '\238\132\131', '\238\132\132' } -- Middle Mouse Button, Mouse Button 4 and 5
 local key_disabled = { description = 'Disabled', data = 'KEY_DISABLED' }
 keys = { key_disabled }
@@ -25,11 +25,14 @@ for i = 1, #mouse do
 end
 for i = 1, #keyboard do
   for j = 1, #keyboard[i] do
-    local str = keyboard[i][j]
-    local desc = i == #keyboard and 'NumPad ' .. str or str
-    keys[#keys + 1] = { description = desc, data = 'KEY_' .. str:upper() }
+    local key = keyboard[i][j]
+    keys[#keys + 1] = { description = key, data = 'KEY_' .. key:upper() }
   end
   keys[#keys + 1] = key_disabled
+end
+for i = 1, #numpad do
+  local key = numpad[i]
+  keys[#keys + 1] = { description = 'Numpad ' .. key, data = 'KEY_KP_' .. key:upper() }
 end
 
 local boolean = { { description = 'No', data = false }, { description = 'Yes', data = true } }
