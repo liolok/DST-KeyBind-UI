@@ -1,0 +1,17 @@
+This is a [b]demo[/b] mod for modders to make their key bindings UX better.
+
+Comparing to vanilla mod options, how does it improve user experience:
+[list]
+[*]Click on option to popup a dialog, then just press the key you want to bind.
+No more endless switching between options.
+[*]Beside mod options, also support hot-rebind in "Settings > Controls".
+[b]No need of restarting game.[/b]
+[/list]
+
+What keys does it support:
+[list]
+[*]Almost all of the keys including number pad
+[*]Mouse middle button and two side buttons
+[/list]
+
+If you're using a mod that has key binding options, feedback and tell its author to use [url=https://github.com/liolok/DST-KeyBind-UI]this code[/url]!
