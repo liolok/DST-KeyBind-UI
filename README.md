@@ -18,14 +18,14 @@ What keys does it support:
 
 ### Mod Option
 
-![](.steam-workshop/screenshot/Screenshot_20250317_012943.webp)
-![](.steam-workshop/screenshot/Screenshot_20250317_012949.webp)
+![](.steam-workshop/screenshot/Screenshot_20250317_023802.webp)
+![](.steam-workshop/screenshot/Screenshot_20250317_023816.webp)
 
 ### Controls Page of Settings
 
 Scroll down the option list, all mods' options are sorted after vanilla options.
 
-![](.steam-workshop/screenshot/Screenshot_20250317_013008.webp)
+![](.steam-workshop/screenshot/Screenshot_20250317_023945.webp)
 
 ## Quick Start
 
