@@ -1,14 +1,35 @@
-# 饥荒联机版键位绑定
+# 饥荒联机模组键位绑定交互优化
 
 [English](./README.md) | 中文
 
-简单方便的模组键位绑定。在模组配置之外，还支持在游戏内「设置 > 控制」页面更改配置，实时生效无需重启。
+简单方便的模组键位绑定单文件代码库。
 
-支持的键位：包含数字小键盘的绝大多数键盘按键、鼠标中键以及两个侧键。
+相比原生的模组设置，体验有哪些改善：
+
+- 点击选项后弹窗，直接按键即可绑定。无需在一大堆键位选项之间左右切换。
+- 在模组设置之外，还支持在游戏内「设置 > 控制」页面更改键位。实时生效，无需重启游戏。
+
+支持哪些键位：
+
+- 包含数字小键盘在内的几乎所有按键
+- 鼠标中键和两个侧键
+
+## 示例截图
+
+### 模组设置
+
+![](.steam-workshop/screenshot/Screenshot_20250317_010031.webp)
+![](.steam-workshop/screenshot/Screenshot_20250317_010045.webp)
+
+### 游戏设置的控制页面
+
+位于配置列表的下方，所有模组对应的按键绑定配置都排在游戏原生配置之后。
+
+![](.steam-workshop/screenshot/Screenshot_20250317_010219.webp)
 
 ## 快速上手
 
-在 `modinfo.lua` 中，定义所有支持的键位：
+在 `modinfo.lua` 中，定义想要支持的键位。本简单示例未添加鼠标的支持，但支持了小键盘。
 
 ```lua
 local keyboard = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, need to match constants.lua too.
@@ -55,7 +76,7 @@ configuration_options = {
 >
 > 例如 `default = 'KEY_DISABLED'` 表示默认不绑定任何键位。
 
-将 `keybind.lua` 复制到模组目录，在 `modmain.lua` 中导入并实现业务逻辑：
+将本仓库内的 `keybind.lua` 复制到你的模组目录，然后在 `modmain.lua` 中导入并实现业务逻辑：
 
 ```lua
 modimport('keybind') -- keybind.lua 实际所在的相对路径
@@ -72,7 +93,7 @@ end
 
 > 说明：函数 `KeyBind` 的第一个参数是配置名称，此处由于我们只绑定了一个键位所以不需要它。
 >
-> 对于更复杂的绑定，比如多个以及鼠标侧键中键，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
+> 对于更复杂的绑定，比如多个键位、鼠标侧键中键，请参考本仓库的 `modinfo.lua` 和 `modmain.lua`。
 
 ## 致谢
 

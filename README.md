@@ -1,14 +1,35 @@
-# KeyBind UI for Don't Starve Together
+# KeyBind UI Refined for Don't Starve Together Mods
 
 English | [中文](./README.zh.md)
 
-Easy key binds for your mod. Beside mod configuration, also support hot-rebind in "Settings > Controls".
+Easy and quick key binding single-file lib for your mod.
 
-Supported key: Most keys of keyboard including number pad, mouse middle button and two side buttons.
+Comparing to vanilla mod options, how does it improve user experience:
+
+- Click on option to popup a dialog, then just press the key you want to bind. No more endless switching between options.
+- Beside mod options, also support hot-rebind in "Settings > Controls". No need of restarting game.
+
+What keys does it support:
+
+- Almost all of the keys including number pad
+- Mouse middle button and two side buttons
+
+## Screenshots
+
+### Mod Option
+
+![](.steam-workshop/screenshot/Screenshot_20250317_012943.webp)
+![](.steam-workshop/screenshot/Screenshot_20250317_012949.webp)
+
+### Controls Page of Settings
+
+Scroll down the option list, all mods' options are sorted after vanilla options.
+
+![](.steam-workshop/screenshot/Screenshot_20250317_013008.webp)
 
 ## Quick Start
 
-In `modinfo.lua`, define all supported keys:
+In `modinfo.lua`, define all the keys you wanna support. This simple example doesn't support mouse but has number pad:
 
 ```lua
 local keyboard = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, need to match constants.lua too.
@@ -55,7 +76,7 @@ configuration_options = {
 >
 > For example, use `default = 'KEY_DISABLED'` to bind no key by default.
 
-Copy `keybind.lua` to your mod folder, import it and implement actual logic in `modmain.lua`:
+Copy `keybind.lua` of this repository to your mod folder, import it and implement actual logic in `modmain.lua`:
 
 ```lua
 modimport('keybind') -- relative path of keybind.lua
@@ -72,7 +93,7 @@ end
 
 > Note: First argument of function `KeyBind` is config name, in this case we only bind one key so no need of it.
 >
-> For more complex binding, such as multiple and mouse button, see `modinfo.lua` and `modmain.lua` in this repository.
+> For more complex usage, such as multiple bindings and mouse button, see `modinfo.lua` and `modmain.lua` in this repository.
 
 ## Credit
 
