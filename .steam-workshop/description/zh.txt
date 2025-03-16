@@ -13,3 +13,16 @@
 [/list]
 
 如果你在用的模组有键位绑定配置，可以向对应的作者反馈，让他来用[url=https://github.com/liolok/DST-KeyBind-UI/blob/master/README.zh.md]这份代码[/url]！
+
+[h2]示例截图[/h2]
+
+[h3]模组设置[/h3]
+
+[img]https://images.steamusercontent.com/ugc/35571099083721992/A6374C5905CFD59A9C25AA9C2F2EC79BDAE10A7E/[/img]
+[img]https://images.steamusercontent.com/ugc/35571099083722099/E75D1366F7D68EDC0630FB25B78009634B925AC7/[/img]
+
+[h3]游戏设置的控制页面[/h3]
+
+位于配置列表的下方，所有模组对应的按键绑定配置都排在游戏原生配置之后。
+
+[img]https://images.steamusercontent.com/ugc/35571099083722277/82F92F02EA027286453C60C5378E01C076700853/[/img]

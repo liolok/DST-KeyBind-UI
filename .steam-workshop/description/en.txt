@@ -15,3 +15,14 @@ What keys does it support:
 [/list]
 
 If you're using a mod that has key binding options, feedback and tell its author to use [url=https://github.com/liolok/DST-KeyBind-UI]this code[/url]!
+
+[h2]Mod Option[/h2]
+
+[img]https://raw.githubusercontent.com/liolok/DST-KeyBind-UI/refs/heads/master/.steam-workshop/screenshot/Screenshot_20250317_023802.webp[/img]
+[img]https://raw.githubusercontent.com/liolok/DST-KeyBind-UI/refs/heads/master/.steam-workshop/screenshot/Screenshot_20250317_023816.webp[/img]
+
+[h3]Controls Page of Settings[/h3]
+
+Scroll down the option list, all mods' options are sorted after vanilla options.
+
+[img]https://raw.githubusercontent.com/liolok/DST-KeyBind-UI/refs/heads/master/.steam-workshop/screenshot/Screenshot_20250317_023945.webp[/img]
