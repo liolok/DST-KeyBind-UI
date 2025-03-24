@@ -26,6 +26,11 @@ local Text = require('widgets/text')
 local TEMPLATES = require('widgets/redux/templates')
 local OptionsScreen = require('screens/redux/optionsscreen')
 
+local KEYBOARD = { -- for missing definitions in constants.lua
+  KEY_QUOTE = 39,
+  KEY_BACKQUOTE = 96,
+}
+
 local MOUSE = { -- mouse button emoji => code number
   ['\238\132\130'] = 1002, -- Middle Mouse Button
   ['\238\132\131'] = 1005, -- Mouse Button 4
@@ -33,9 +38,9 @@ local MOUSE = { -- mouse button emoji => code number
 }
 
 -- "KEY_*" and mouse button emoji => code number or nil
-local function Raw(key) return MOUSE[key] or G.rawget(G, key) end
+local function Raw(key) return KEYBOARD[key] or MOUSE[key] or G.rawget(G, key) end
 
--- code number to "KEY_*" and mouse button emoji
+-- code number => "KEY_*" and mouse button emoji
 local str = {}
 for _, option in ipairs(modinfo.keys) do
   local key = option.data
