@@ -1,4 +1,5 @@
--- This is a demo of how to work with keybind.lua to handle key-down events.
+-- This is a demo of how to work with keybind.lua to handle
+-- key-down and key-hold events, with both keyboard and mouse.
 -- Of course, you're free to do anything with bound keys.
 -- Configurations are defined in modinfo.lua
 
@@ -8,19 +9,60 @@ local callback = {} -- config name to function called when the key event trigger
 for i = 1, 12 do
   callback['keybind_' .. i] = function() print('KeyBind ' .. i) end
 end
+local is_holding = false
+callback.keybind_hold = {
+  down = function()
+    is_holding = true
+    print('Holding the Hold Key: Down')
+  end,
+  up = function()
+    is_holding = false
+    print('Holding the Hold Key: Up')
+  end,
+}
 
 local handler = {} -- config name to key event handlers
 function KeyBind(name, key)
-  if handler[name] then handler[name]:Remove() end -- disable old binding
-  if key ~= nil then -- new binding
-    if key >= 1000 then -- it's a mouse button
+  -- disable old binding
+  if handler[name] then
+    if name == 'keybind_hold' then
+      for _, v in ipairs(handler.keybind_hold or {}) do
+        v:Remove()
+        v = nil
+      end
+    else
+      handler[name]:Remove()
+      handler[name] = nil
+    end
+  end
+
+  -- no binding
+  if not key then return end
+
+  -- new binding
+  if key >= 1000 then -- it's a mouse button
+    if name == 'keybind_hold' then
+      handler.keybind_hold = {
+        down = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
+          if button == key and down then callback[name].down() end
+        end),
+        up = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
+          if button == key and not down then callback[name].up() end
+        end),
+      }
+    else
       handler[name] = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
         if button == key and down then callback[name]() end
       end)
-    else -- it's a keyboard key
+    end
+  else -- it's a keyboard key
+    if name == 'keybind_hold' then
+      handler.keybind_hold = {
+        down = GLOBAL.TheInput:AddKeyDownHandler(key, callback[name].down),
+        up = GLOBAL.TheInput:AddKeyUpHandler(key, callback[name].up),
+      }
+    else
       handler[name] = GLOBAL.TheInput:AddKeyDownHandler(key, callback[name])
     end
-  else -- no binding
-    handler[name] = nil
   end
 end

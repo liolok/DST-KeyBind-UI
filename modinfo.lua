@@ -133,6 +133,13 @@ configuration_options = {
     options = keys,
   },
   {
+    name = 'keybind_hold',
+    label = 'KeyBind to Hold',
+    hover = 'Description for KeyBind to Hold',
+    default = 'KEY_LSHIFT',
+    options = keys,
+  },
+  {
     name = 'boolean',
     label = 'Boolean',
     hover = 'Description for Boolean',
