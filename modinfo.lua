@@ -13,7 +13,7 @@ local keyboard = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, n
   { 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' },
   { 'Escape', 'Tab', 'CapsLock', 'LShift', 'LCtrl', 'LSuper', 'LAlt' },
   { 'Space', 'RAlt', 'RSuper', 'RCtrl', 'RShift', 'Enter', 'Backspace' },
-  { 'BackQuote', 'Tilde', 'Minus', 'Equals', 'LeftBracket', 'RightBracket' },
+  { 'BackQuote', 'Minus', 'Equals', 'LeftBracket', 'RightBracket' },
   { 'Backslash', 'Semicolon', 'Quote', 'Period', 'Slash' }, -- punctuation
   { 'Up', 'Down', 'Left', 'Right', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown' }, -- navigation
 }
