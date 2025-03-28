@@ -1,5 +1,5 @@
 -- This is a demo of how to work with keybind.lua to handle
--- key-down and key-hold events, with both keyboard and mouse.
+-- key-down and key-down-and-up events, with both keyboard and mouse.
 -- Of course, you're free to do anything with bound keys.
 -- Configurations are defined in modinfo.lua
 
@@ -25,15 +25,8 @@ local handler = {} -- config name to key event handlers
 function KeyBind(name, key)
   -- disable old binding
   if handler[name] then
-    if name == 'keybind_hold' then
-      for _, v in ipairs(handler.keybind_hold or {}) do
-        v:Remove()
-        v = nil
-      end
-    else
-      handler[name]:Remove()
-      handler[name] = nil
-    end
+    handler[name]:Remove()
+    handler[name] = nil
   end
 
   -- no binding
@@ -42,14 +35,11 @@ function KeyBind(name, key)
   -- new binding
   if key >= 1000 then -- it's a mouse button
     if name == 'keybind_hold' then
-      handler.keybind_hold = {
-        down = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
-          if button == key and down then callback[name].down() end
-        end),
-        up = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
-          if button == key and not down then callback[name].up() end
-        end),
-      }
+      handler[name] = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
+        if button ~= key then return end
+        local fn = down and 'down' or 'up'
+        callback[name][fn]()
+      end)
     else
       handler[name] = GLOBAL.TheInput:AddMouseButtonHandler(function(button, down, x, y)
         if button == key and down then callback[name]() end
@@ -57,10 +47,11 @@ function KeyBind(name, key)
     end
   else -- it's a keyboard key
     if name == 'keybind_hold' then
-      handler.keybind_hold = {
-        down = GLOBAL.TheInput:AddKeyDownHandler(key, callback[name].down),
-        up = GLOBAL.TheInput:AddKeyUpHandler(key, callback[name].up),
-      }
+      handler[name] = GLOBAL.TheInput:AddKeyHandler(function(_key, down)
+        if _key ~= key then return end
+        local fn = down and 'down' or 'up'
+        callback[name][fn]()
+      end)
     else
       handler[name] = GLOBAL.TheInput:AddKeyDownHandler(key, callback[name])
     end
