@@ -1,7 +1,7 @@
 name = 'KeyBind UI Demo'
 author = 'rtk0c, liolok'
 description = 'https://github.com/liolok/DST-KeyBind-UI'
-version = '1.1.0'
+version = '1.1.1'
 api_version = 10
 dst_compatible = true
 client_only_mod = true
